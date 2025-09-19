@@ -6,6 +6,4 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "awslabs-openapi-mcp-server[yaml]>=0.2.4",
-    "fastapi>=0.111.0",
-    "uvicorn>=0.30.0",
 ]
