@@ -1,6 +1,6 @@
 import os
-from awslabs.openapi_mcp_server import OpenApiMcpServer
-
+# Correct
+from awslabs.openapi_mcp_server.server import OpenApiMcpServer
 # The deployment platform will look for this 'app' variable.
 app = OpenApiMcpServer(
     # These values are read from the environment variables you set in the FastMCP UI.
