@@ -1,11 +1,24 @@
+from fastapi import FastAPI
+from typing import Dict
 import os
-from awslabs.openapi_mcp_server.server import server
 
-# The deployment platform will look for this 'app' variable.
-# The class is named 'Server', not 'OpenApiMcpServer'.
-app = server(
-    # These values are read from the environment variables you set in the FastMCP UI.
-    api_name=os.environ.get("API_NAME", "my-api"),
-    api_url=os.environ.get("API_BASE_URL", "https://myserverbymycoco.onrender.com"),
-    spec_url=os.environ.get("API_SPEC_URL", "https://myserverbymycoco.onrender.com/openapi.yaml"),
+# Create the FastAPI application object that FastMCP can run.
+app = FastAPI(
+    title=os.environ.get("API_NAME", "My API Adapter"),
+    description="A server to adapt an API for an MCP agent.",
+    version="1.0.0",
 )
+
+@app.get("/")
+def read_root() -> Dict[str, str]:
+    """
+    A simple endpoint to confirm the server is running.
+    """
+    return {"message": "Hello from the FastAPI server!"}
+
+# You can now add your other API endpoints and logic here.
+# For example:
+# @app.post("/my-data-endpoint")
+# async def process_data(data: dict):
+#     # ... your logic here
+#     return {"status": "success"}
