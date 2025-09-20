@@ -752,10 +752,14 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "awslabs-openapi-mcp-server", extra = ["yaml"] },
+    { name = "fastmcp" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "awslabs-openapi-mcp-server", extras = ["yaml"], specifier = ">=0.2.4" }]
+requires-dist = [
+    { name = "awslabs-openapi-mcp-server", extras = ["yaml"], specifier = ">=0.2.4" },
+    { name = "fastmcp", specifier = ">=2.12.3" },
+]
 
 [[package]]
 name = "openapi-core"
