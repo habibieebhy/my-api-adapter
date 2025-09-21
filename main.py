@@ -1,16 +1,18 @@
-# my_server.py
+import httpx
 from fastmcp import FastMCP
 
-mcp = FastMCP(name="MyServer")
+# Create an HTTP client for your API
+client = httpx.AsyncClient(base_url="https://myserverbymycoco.onrender.com")
 
-@mcp.tool
-def greet(name: str) -> str:
-    """Greet a user by name."""
-    return f"Hello, {name}!"
+# Load your OpenAPI spec 
+openapi_spec = httpx.get("https://myserverbymycoco.onrender.com/openapi.yaml").json()
+
+# Create the MCP server
+mcp = FastMCP.from_openapi(
+    openapi_spec=openapi_spec,
+    client=client,
+    name="My API Server"
+)
 
 if __name__ == "__main__":
-    # This runs the server, defaulting to STDIO transport
     mcp.run()
-    
-    # To use a different transport, e.g., HTTP:
-    # mcp.run(transport="http", host="127.0.0.1", port=9000)
