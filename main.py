@@ -48,4 +48,3 @@ mcp_app = FastMCP.from_openapi(
 # Use uvicorn to run the FastMCP application
 if __name__ == "__main__":
     print(f"🚀 Starting uvicorn server.")
-    uvicorn.run("main:mcp_app", host="0.0.0.0", port=8000)
