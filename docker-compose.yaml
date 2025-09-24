@@ -1,0 +1,12 @@
+services:
+  api-adapter:
+    image: goswamirohit/myapiadapter:v5
+    container_name: my-api-adapter
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    # This tells Docker to load environment variables from the .env file.
+    env_file:
+      - .env
+    volumes:
+      - .:/app
