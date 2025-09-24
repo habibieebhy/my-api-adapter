@@ -1,10 +1,8 @@
 import httpx
 import time
 import sys
+import uvicorn
 from fastmcp import FastMCP
-
-# Create an HTTP client for your API
-client = httpx.AsyncClient(base_url="https://myserverbymycoco.onrender.com")
 
 # The number of times to retry fetching the OpenAPI spec
 MAX_RETRIES = 5
@@ -35,12 +33,19 @@ if openapi_spec is None:
     print("❌ Critical: OpenAPI spec could not be loaded. Aborting.")
     sys.exit(1)
 
-# Create the MCP server
-mcp = FastMCP.from_openapi(
+# Create the MCP server instance
+mcp_app = FastMCP.from_openapi(
     openapi_spec=openapi_spec,
-    client=client,
+    client=httpx.AsyncClient(base_url="https://myserverbymycoco.onrender.com"),
     name="My API Server"
 )
 
+# Render's environment variable for the web server port
+# Use a default of 8000 if not set
+port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+host = "0.0.0.0"
+
+# Use uvicorn to run the FastMCP application
 if __name__ == "__main__":
-    mcp.run()
+    print(f"🚀 Starting uvicorn server on http://{host}:{port}")
+    uvicorn.run(mcp_app, host=host, port=port)
