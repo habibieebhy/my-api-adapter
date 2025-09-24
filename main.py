@@ -40,12 +40,12 @@ mcp_app = FastMCP.from_openapi(
     name="My API Server"
 )
 
-# Render's environment variable for the web server port
-# Use a default of 8000 if not set
-port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
-host = "0.0.0.0"
+# This block is no longer needed because the uvicorn start command
+# will handle the host and port for you on Render.
+# port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+# host = "0.0.0.0"
 
 # Use uvicorn to run the FastMCP application
 if __name__ == "__main__":
-    print(f"🚀 Starting uvicorn server on http://{host}:{port}")
-    uvicorn.run(mcp_app, host=host, port=port)
+    print(f"🚀 Starting uvicorn server.")
+    uvicorn.run(mcp_app, host="0.0.0.0", port=8000)
