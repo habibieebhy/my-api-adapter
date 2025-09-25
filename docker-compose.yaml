@@ -1,5 +1,5 @@
 services:
-  api-adapter:
+  api-adapter: # this is the service name used to create nginx reverse proxy config file alias
     image: goswamirohit/myapiadapter:v5
     container_name: my-api-adapter
     restart: unless-stopped
