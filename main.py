@@ -45,46 +45,34 @@ class ApiClient:
 
     async def _request(self, method: str, path: str, **kwargs) -> dict:
         """Helper to make an async request and handle standard API response format."""
-        # Note: The implementation manually prepends the base URL for the request
         url = self.base_url + path
         try:
-            # Determine the data being sent for logging purposes
-            # For GET, we log params; for POST/others, we log the JSON payload
             request_data = kwargs.get('params', kwargs.get('json', 'N/A'))
             print(f"🚀 Calling {method} {path} with data: {request_data}")
             
-            # Ensure we prefer JSON from the server; allow caller headers to override if needed
             headers = kwargs.pop("headers", {})
             headers = {"Accept": "application/json", **headers}
 
             response = await self.client.request(method, url, headers=headers, **kwargs)
-            response.raise_for_status() # Raise exception for 4xx/5xx status codes
+            response.raise_for_status()
 
-            # If server returns JSON, parse and apply {success,data} contract.
             content_type = (response.headers.get("content-type") or "").lower()
             if "application/json" in content_type:
                 data = response.json()
-                # Assuming your backend returns JSON with { "success": true, "data": [...] }
                 if isinstance(data, dict) and "success" in data:
                     if not data.get('success'):
                         error_msg = data.get('error', "API call failed with no specific error message.")
-                        # Uses the imported or fallback ToolCallError
                         raise ToolCallError(f"Backend reported failure for {path}: {error_msg}")
                     return data.get('data', [])
-                # If backend returns plain JSON without the {success,data} envelope,
-                # return it as-is instead of exploding.
                 return data
 
-            # Non-JSON response: return raw bytes so callers/clients can handle it
             return response.content
 
         except httpx.HTTPStatusError as e:
-            # Handle specific HTTP errors (404, 500, etc.)
             error_details = f"HTTP Error {e.response.status_code}: {e.response.text}"
             print(f"❌ {error_details}")
             raise ToolCallError(f"Failed to fetch data from {path}. {error_details}")
         except httpx.RequestError as e:
-            # Handle network/connection errors
             print(f"❌ Request Error: {e}")
             raise ToolCallError(f"Network error accessing {url}. Check API server status. Details: {e}")
         except Exception as e:
@@ -95,8 +83,6 @@ class ApiClient:
         return await self._request("GET", path, params=params)
 
     async def post(self, path: str, data: dict) -> dict:
-        """Helper for making POST requests with JSON payload."""
-        # httpx uses 'json' keyword to automatically serialize the dict payload
         return await self._request("POST", path, json=data)
 
 
@@ -109,13 +95,8 @@ class McpDataTools:
     def __init__(self, client: ApiClient):
         self.client = client
 
-    # Helper function to create the params dict for GET requests, skipping 'self' and None values
     def _collect_params(self, local_vars: dict) -> dict:
-        """Collects function arguments into a dictionary suitable for API params."""
-        # We also filter out any default values that might be present but are None
         return {k: v for k, v in local_vars.items() if k != 'self' and v is not None}
-
-    # ------- The GET/Fetching section ----
 
     # --- USERS TOOLS ---
 
@@ -124,7 +105,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_users_list(
-        self, 
+        self, /,
         search: Annotated[str | None, "Search term for user (e.g., part of an email)."] = None,
         limit: Annotated[int, Field(description="Maximum number of records to return (default 50).", default=50)] = 50,
         role: Annotated[str | None, "Filter users by role."] = None,
@@ -133,7 +114,6 @@ class McpDataTools:
         status: Annotated[str | None, "Filter users by status."] = None,
         companyId: Annotated[int | None, "Filter users belonging to a specific company ID."] = None,
     ) -> list[dict]:
-        """Maps to: GET /api/users"""
         params = self._collect_params(locals())
         return await self.client.get("/api/users", params=params)
 
@@ -145,7 +125,6 @@ class McpDataTools:
         self, /,
         user_id: Annotated[int, "The unique ID of the user to fetch."],
     ) -> dict:
-        """Maps to: GET /api/users/{id}"""
         return await self.client.get(f"/api/users/{user_id}")
 
     # --- DEALERS TOOLS ---
@@ -155,14 +134,13 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_dealers_list(
-        self, 
+        self, /,
         limit: Annotated[int, Field(description="Maximum number of records to return (default 50).", default=50)] = 50,
         region: Annotated[str | None, "Filter dealers by region."] = None,
         area: Annotated[str | None, "Filter dealers by area."] = None,
         type: Annotated[str | None, "Filter dealers by type."] = None,
         userId: Annotated[int | None, "Filter dealers managed by a specific user ID."] = None,
     ) -> list[dict]:
-        """Maps to: GET /api/dealers"""
         params = self._collect_params(locals())
         return await self.client.get("/api/dealers", params=params)
 
@@ -172,11 +150,9 @@ class McpDataTools:
     )
     async def get_dealer_by_id(
         self, /,
-        dealer_id: Annotated[int, "The unique ID of the dealer to fetch."],
+        dealer_id: Annotated[str, "The unique ID (string) of the dealer to fetch."],
     ) -> dict:
-        """Maps to: GET /api/dealers/{id}"""
         return await self.client.get(f"/api/dealers/{dealer_id}")
-
 
     # --- DVR (Daily Visit Reports) TOOLS ---
 
@@ -185,7 +161,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_dvr_reports(
-        self, 
+        self, /,
         startDate: Annotated[str | None, "Start date for filtering (e.g., 'YYYY-MM-DD')."] = None,
         endDate: Annotated[str | None, "End date for filtering (e.g., 'YYYY-MM-DD')."] = None,
         limit: Annotated[int, Field(description="Maximum number of records to return (default 50).", default=50)] = 50,
@@ -193,7 +169,6 @@ class McpDataTools:
         dealerType: Annotated[str | None, "Filter reports by the type of dealer visited."] = None,
         visitType: Annotated[str | None, "Filter reports by the type of visit conducted."] = None,
     ) -> list[dict]:
-        """Maps to: GET /api/daily-visit-reports"""
         params = self._collect_params(locals())
         return await self.client.get("/api/daily-visit-reports", params=params)
 
@@ -203,9 +178,8 @@ class McpDataTools:
     )
     async def get_dvr_report_by_id(
         self, /,
-        report_id: Annotated[int, "The unique ID of the DVR to fetch."],
+        report_id: Annotated[str, "The unique ID (string) of the DVR to fetch."],
     ) -> dict:
-        """Maps to: GET /api/daily-visit-reports/{id}"""
         return await self.client.get(f"/api/daily-visit-reports/{report_id}")
     
     # --- TVR (Technical Visit Reports) TOOLS ---
@@ -215,7 +189,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_tvr_reports(
-        self, 
+        self, /,
         startDate: Annotated[str | None, "Start date for filtering (e.g., 'YYYY-MM-DD')."] = None,
         endDate: Annotated[str | None, "End date for filtering (e.g., 'YYYY-MM-DD')."] = None,
         limit: Annotated[int, Field(description="Maximum number of records to return (default 50).", default=50)] = 50,
@@ -223,7 +197,6 @@ class McpDataTools:
         visitType: Annotated[str | None, "Filter reports by the type of visit conducted (e.g., 'Installation', 'Maintenance')."] = None,
         serviceType: Annotated[str | None, "Filter reports by the service type performed (e.g., 'Warranty', 'Paid Service')."] = None,
     ) -> list[dict]:
-        """Maps to: GET /api/technical-visit-reports"""
         params = self._collect_params(locals())
         return await self.client.get("/api/technical-visit-reports", params=params)
 
@@ -233,9 +206,8 @@ class McpDataTools:
     )
     async def get_tvr_report_by_id(
         self, /,
-        report_id: Annotated[int, "The unique ID of the TVR to fetch."],
+        report_id: Annotated[str, "The unique ID (string) of the TVR to fetch."],
     ) -> dict:
-        """Maps to: GET /api/technical-visit-reports/{id}"""
         return await self.client.get(f"/api/technical-visit-reports/{report_id}")
         
     # --- SALES ORDERS TOOLS ---
@@ -245,14 +217,13 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_sales_orders(
-        self, 
+        self, /,
         startDate: Annotated[str | None, "Start date for filtering estimated delivery (e.g., 'YYYY-MM-DD')."] = None,
         endDate: Annotated[str | None, "End date for filtering estimated delivery (e.g., 'YYYY-MM-DD')."] = None,
         limit: Annotated[int, Field(description="Maximum number of records to return (default 50).", default=50)] = 50,
         salesmanId: Annotated[int | None, "Filter orders by the unique ID of the salesman who booked the order."] = None,
         dealerId: Annotated[str | None, "Filter orders by the ID of the dealer who placed the order."] = None,
     ) -> list[dict]:
-        """Maps to: GET /api/sales-orders"""
         params = self._collect_params(locals())
         return await self.client.get("/api/sales-orders", params=params)
 
@@ -262,14 +233,11 @@ class McpDataTools:
     )
     async def get_sales_order_by_id(
         self, /,
-        order_id: Annotated[int, "The unique ID of the Sales Order to fetch."],
+        order_id: Annotated[str, "The unique ID (string) of the Sales Order to fetch."],
     ) -> dict:
-        """Maps to: GET /api/sales-orders/{id}"""
         return await self.client.get(f"/api/sales-orders/{order_id}")
 
-    #----- End of GET Section
-
-    # ------- The POST/Creation section ----
+    # --- The POST/Creation section ----
 
     @mcp.tool(
         description="Create a new Sales Order record. The tool returns the created Sales Order record, including its new ID. Requires salesmanId, dealerId, quantity, unit, and payment details.",
@@ -287,11 +255,6 @@ class McpDataTools:
         estimatedDelivery: Annotated[str, "The estimated delivery date (YYYY-MM-DD format) (required)."],
         remarks: Annotated[str | None, "Optional remarks about the order."] = None,
     ) -> dict:
-        """
-        Creates a new Sales Order.
-        Maps to: POST /api/sales-orders
-        """
-        # Collect all parameters for the POST body
         data = self._collect_params(locals())
         return await self.client.post("/api/sales-orders", data=data)
 
@@ -327,16 +290,7 @@ class McpDataTools:
         inTimeImageUrl: Annotated[str | None, "Optional URL for the check-in photo."] = None,
         outTimeImageUrl: Annotated[str | None, "Optional URL for the check-out photo."] = None,
     ) -> dict:
-        """
-        Creates a new Daily Visit Report.
-        Maps to: POST /api/daily-visit-reports
-        """
-        # Collect all parameters for the POST body
         data = self._collect_params(locals())
-
-        # Note: We rely on FastMCP's schema generation to enforce 'brandSelling' is a list of strings.
-        # If the LLM somehow provides a single string, FastMCP/Pydantic validation should handle it.
-            
         return await self.client.post("/api/daily-visit-reports", data=data)
 
     @mcp.tool(
@@ -355,7 +309,6 @@ class McpDataTools:
         conversionStatus: Annotated[str, "Status of conversion for the client/site (e.g., 'Converted', 'Follow-up') (required)."],
         conversionVolume: Annotated[float, "Estimated volume of conversion in metric tons (required)."],
         
-        # Optional fields
         dealerId: Annotated[str | None, "Optional ID of the related dealer."] = None,
         serviceType: Annotated[str | None, "Optional service type performed (e.g., 'Warranty', 'Paid Service')."] = None,
         competitorsProduct: Annotated[str | None, "Optional product from competitors found at the site."] = None,
@@ -364,25 +317,18 @@ class McpDataTools:
         inTimeImageUrl: Annotated[str | None, "Optional URL for the check-in photo."] = None,
         outTimeImageUrl: Annotated[str | None, "Optional URL for the check-out photo."] = None,
     ) -> dict:
-        """
-        Creates a new Technical Visit Report.
-        Maps to: POST /api/technical-visit-reports
-        """
-        # Collect all parameters for the POST body
         data = self._collect_params(locals())
         return await self.client.post("/api/technical-visit-reports", data=data)
 
 # --- Main Execution ---
 def main():
-    # init your API client and register tools
     api_client = ApiClient(API_BASE_URL)
     McpDataTools(api_client)
 
     print("\nStarting MyCoco MCP Server...")
     print("Server is ready to serve all registered tools.")
 
-    # DO NOT await this. It manages the loop itself.
-    mcp.run(transport="http", port=8000)  # or stdio if you prefer
+    mcp.run(transport="http", port=8000)
 
 if __name__ == "__main__":
     main()
