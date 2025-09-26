@@ -142,7 +142,8 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_user_by_id(
-    user_id: Annotated[int, "The unique ID of the user to fetch."],
+        self, /,
+        user_id: Annotated[int, "The unique ID of the user to fetch."],
     ) -> dict:
         """Maps to: GET /api/users/{id}"""
         return await self.client.get(f"/api/users/{user_id}")
@@ -170,7 +171,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_dealer_by_id(
-        self, 
+        self, /,
         dealer_id: Annotated[int, "The unique ID of the dealer to fetch."],
     ) -> dict:
         """Maps to: GET /api/dealers/{id}"""
@@ -201,7 +202,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_dvr_report_by_id(
-        self, 
+        self, /,
         report_id: Annotated[int, "The unique ID of the DVR to fetch."],
     ) -> dict:
         """Maps to: GET /api/daily-visit-reports/{id}"""
@@ -231,7 +232,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_tvr_report_by_id(
-        self, 
+        self, /,
         report_id: Annotated[int, "The unique ID of the TVR to fetch."],
     ) -> dict:
         """Maps to: GET /api/technical-visit-reports/{id}"""
@@ -260,7 +261,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_sales_order_by_id(
-        self, 
+        self, /,
         order_id: Annotated[int, "The unique ID of the Sales Order to fetch."],
     ) -> dict:
         """Maps to: GET /api/sales-orders/{id}"""
@@ -275,7 +276,7 @@ class McpDataTools:
         annotations={"destructiveHint": True, "requiresConfirmation": True},
     )
     async def post_sales_order(
-        self, 
+        self, /,
         salesmanId: Annotated[int, "The ID of the salesman who booked the order (required)."],
         dealerId: Annotated[str, "The ID of the dealer who placed the order (required)."],
         quantity: Annotated[float, "Order quantity (e.g., 10.5)."],
@@ -299,7 +300,7 @@ class McpDataTools:
         annotations={"destructiveHint": True, "requiresConfirmation": True},
     )
     async def post_dvr_report(
-        self, 
+        self, /,
         userId: Annotated[int, "The unique ID of the user who submitted the report (required)."],
         reportDate: Annotated[str, "Date of the report (YYYY-MM-DD format) (required)."],
         dealerType: Annotated[str, "Type of dealer visited (required)."],
@@ -343,7 +344,7 @@ class McpDataTools:
         annotations={"destructiveHint": True, "requiresConfirmation": True},
     )
     async def post_tvr_report(
-        self, 
+        self, /,
         userId: Annotated[int, "The unique ID of the user who submitted the report (required)."],
         reportDate: Annotated[str, "Date of the report (YYYY-MM-DD format) (required)."],
         visitType: Annotated[str, "Type of visit conducted (required)."],
