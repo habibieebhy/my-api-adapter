@@ -55,17 +55,30 @@ class ApiClient:
             request_data = kwargs.get('params', kwargs.get('json', 'N/A'))
             print(f"🚀 Calling {method} {path} with data: {request_data}")
             
-            response = await self.client.request(method, url, **kwargs)
-            response.raise_for_status() # Raise exception for 4xx/5xx status codes
-            
-            # Assuming your backend returns JSON with { "success": true, "data": [...] }
-            data = response.json()
-            if not data.get('success'):
-                error_msg = data.get('error', "API call failed with no specific error message.")
-                # Uses the imported or fallback ToolCallError
-                raise ToolCallError(f"Backend reported failure for {path}: {error_msg}")
+            # Ensure we prefer JSON from the server; allow caller headers to override if needed
+            headers = kwargs.pop("headers", {})
+            headers = {"Accept": "application/json", **headers}
 
-            return data.get('data', [])
+            response = await self.client.request(method, url, headers=headers, **kwargs)
+            response.raise_for_status() # Raise exception for 4xx/5xx status codes
+
+            # If server returns JSON, parse and apply {success,data} contract.
+            content_type = (response.headers.get("content-type") or "").lower()
+            if "application/json" in content_type:
+                data = response.json()
+                # Assuming your backend returns JSON with { "success": true, "data": [...] }
+                if isinstance(data, dict) and "success" in data:
+                    if not data.get('success'):
+                        error_msg = data.get('error', "API call failed with no specific error message.")
+                        # Uses the imported or fallback ToolCallError
+                        raise ToolCallError(f"Backend reported failure for {path}: {error_msg}")
+                    return data.get('data', [])
+                # If backend returns plain JSON without the {success,data} envelope,
+                # return it as-is instead of exploding.
+                return data
+
+            # Non-JSON response: return raw bytes so callers/clients can handle it
+            return response.content
 
         except httpx.HTTPStatusError as e:
             # Handle specific HTTP errors (404, 500, etc.)
@@ -109,7 +122,8 @@ class McpDataTools:
     # --- USERS TOOLS ---
 
     @mcp.tool(
-        description="Fetch a list of users, optionally filtered by role, region, area, status, company ID, or a search term (email)."
+        description="Fetch a list of users, optionally filtered by role, region, area, status, company ID, or a search term (email).",
+        annotations={"readOnlyHint": True},
     )
     async def get_users_list(
         self, 
@@ -126,7 +140,8 @@ class McpDataTools:
         return await self.client.get("/api/users", params=params)
 
     @mcp.tool(
-        description="Fetch a single user's detailed information using their unique ID."
+        description="Fetch a single user's detailed information using their unique ID.",
+        annotations={"readOnlyHint": True},
     )
     async def get_user_by_id(
         self, 
@@ -138,7 +153,8 @@ class McpDataTools:
     # --- DEALERS TOOLS ---
 
     @mcp.tool(
-        description="Fetch a list of dealers, optionally filtered by region, area, type, or the user (salesman) ID responsible for the dealer."
+        description="Fetch a list of dealers, optionally filtered by region, area, type, or the user (salesman) ID responsible for the dealer.",
+        annotations={"readOnlyHint": True},
     )
     async def get_dealers_list(
         self, 
@@ -153,7 +169,8 @@ class McpDataTools:
         return await self.client.get("/api/dealers", params=params)
 
     @mcp.tool(
-        description="Fetch a single dealer's detailed information using their unique ID."
+        description="Fetch a single dealer's detailed information using their unique ID.",
+        annotations={"readOnlyHint": True},
     )
     async def get_dealer_by_id(
         self, 
@@ -166,7 +183,8 @@ class McpDataTools:
     # --- DVR (Daily Visit Reports) TOOLS ---
 
     @mcp.tool(
-        description="Fetch Daily Visit Reports, supporting date range filtering (startDate, endDate) and filtering by user ID, dealer type, or visit type."
+        description="Fetch Daily Visit Reports, supporting date range filtering (startDate, endDate) and filtering by user ID, dealer type, or visit type.",
+        annotations={"readOnlyHint": True},
     )
     async def get_dvr_reports(
         self, 
@@ -182,7 +200,8 @@ class McpDataTools:
         return await self.client.get("/api/daily-visit-reports", params=params)
 
     @mcp.tool(
-        description="Fetch a single Daily Visit Report using its unique ID."
+        description="Fetch a single Daily Visit Report using its unique ID.",
+        annotations={"readOnlyHint": True},
     )
     async def get_dvr_report_by_id(
         self, 
@@ -194,7 +213,8 @@ class McpDataTools:
     # --- TVR (Technical Visit Reports) TOOLS ---
 
     @mcp.tool(
-        description="Fetch Technical Visit Reports, supporting date range filtering (startDate, endDate) and filtering by user ID, visit type, or service type."
+        description="Fetch Technical Visit Reports, supporting date range filtering (startDate, endDate) and filtering by user ID, visit type, or service type.",
+        annotations={"readOnlyHint": True},
     )
     async def get_tvr_reports(
         self, 
@@ -210,7 +230,8 @@ class McpDataTools:
         return await self.client.get("/api/technical-visit-reports", params=params)
 
     @mcp.tool(
-        description="Fetch a single Technical Visit Report using its unique ID."
+        description="Fetch a single Technical Visit Report using its unique ID.",
+        annotations={"readOnlyHint": True},
     )
     async def get_tvr_report_by_id(
         self, 
@@ -222,7 +243,8 @@ class McpDataTools:
     # --- SALES ORDERS TOOLS ---
 
     @mcp.tool(
-        description="Fetch Sales Orders, supporting date range filtering (startDate, endDate) based on estimated delivery date, and filtering by salesman ID or dealer ID."
+        description="Fetch Sales Orders, supporting date range filtering (startDate, endDate) based on estimated delivery date, and filtering by salesman ID or dealer ID.",
+        annotations={"readOnlyHint": True},
     )
     async def get_sales_orders(
         self, 
@@ -237,7 +259,8 @@ class McpDataTools:
         return await self.client.get("/api/sales-orders", params=params)
 
     @mcp.tool(
-        description="Fetch a single Sales Order's detailed information using its unique ID."
+        description="Fetch a single Sales Order's detailed information using its unique ID.",
+        annotations={"readOnlyHint": True},
     )
     async def get_sales_order_by_id(
         self, 
@@ -252,6 +275,7 @@ class McpDataTools:
 
     @mcp.tool(
         description="Create a new Sales Order record. The tool returns the created Sales Order record, including its new ID. Requires salesmanId, dealerId, quantity, unit, and payment details.",
+        annotations={"destructiveHint": True, "requiresConfirmation": True},
     )
     async def post_sales_order(
         self, 
@@ -275,6 +299,7 @@ class McpDataTools:
 
     @mcp.tool(
         description="Create a new Daily Visit Report (DVR). The tool returns the created report record, including its new ID. Requires detailed information about the visit, including user, location, metrics, and products.",
+        annotations={"destructiveHint": True, "requiresConfirmation": True},
     )
     async def post_dvr_report(
         self, 
@@ -318,6 +343,7 @@ class McpDataTools:
 
     @mcp.tool(
         description="Create a new Technical Visit Report (TVR). The tool returns the created report record, including its new ID. Requires detailed information about the technical site visit, client feedback, and conversion details.",
+        annotations={"destructiveHint": True, "requiresConfirmation": True},
     )
     async def post_tvr_report(
         self, 
