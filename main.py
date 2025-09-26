@@ -96,7 +96,8 @@ class McpDataTools:
         self.client = client
 
     def _collect_params(self, local_vars: dict) -> dict:
-        return {k: v for k, v in local_vars.items() if k != 'self' and v is not None}
+        # Filter out 'self' and also the implicitly created 'kwargs' if it exists
+        return {k: v for k, v in local_vars.items() if k not in ['self', 'kwargs'] and v is not None}
 
     # --- USERS TOOLS ---
 
@@ -105,7 +106,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_users_list(
-        self, /,
+        self, *,
         search: Annotated[str | None, "Search term for user (e.g., part of an email)."] = None,
         limit: Annotated[int, Field(description="Maximum number of records to return (default 50).", default=50)] = 50,
         role: Annotated[str | None, "Filter users by role."] = None,
@@ -122,7 +123,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_user_by_id(
-        self, /,
+        self, *,
         user_id: Annotated[int, "The unique ID of the user to fetch."],
     ) -> dict:
         return await self.client.get(f"/api/users/{user_id}")
@@ -134,7 +135,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_dealers_list(
-        self, /,
+        self, *,
         limit: Annotated[int, Field(description="Maximum number of records to return (default 50).", default=50)] = 50,
         region: Annotated[str | None, "Filter dealers by region."] = None,
         area: Annotated[str | None, "Filter dealers by area."] = None,
@@ -149,7 +150,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_dealer_by_id(
-        self, /,
+        self, *,
         dealer_id: Annotated[str, "The unique ID (string) of the dealer to fetch."],
     ) -> dict:
         return await self.client.get(f"/api/dealers/{dealer_id}")
@@ -161,7 +162,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_dvr_reports(
-        self, /,
+        self, *,
         startDate: Annotated[str | None, "Start date for filtering (e.g., 'YYYY-MM-DD')."] = None,
         endDate: Annotated[str | None, "End date for filtering (e.g., 'YYYY-MM-DD')."] = None,
         limit: Annotated[int, Field(description="Maximum number of records to return (default 50).", default=50)] = 50,
@@ -177,7 +178,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_dvr_report_by_id(
-        self, /,
+        self, *,
         report_id: Annotated[str, "The unique ID (string) of the DVR to fetch."],
     ) -> dict:
         return await self.client.get(f"/api/daily-visit-reports/{report_id}")
@@ -189,7 +190,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_tvr_reports(
-        self, /,
+        self, *,
         startDate: Annotated[str | None, "Start date for filtering (e.g., 'YYYY-MM-DD')."] = None,
         endDate: Annotated[str | None, "End date for filtering (e.g., 'YYYY-MM-DD')."] = None,
         limit: Annotated[int, Field(description="Maximum number of records to return (default 50).", default=50)] = 50,
@@ -205,7 +206,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_tvr_report_by_id(
-        self, /,
+        self, *,
         report_id: Annotated[str, "The unique ID (string) of the TVR to fetch."],
     ) -> dict:
         return await self.client.get(f"/api/technical-visit-reports/{report_id}")
@@ -217,7 +218,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_sales_orders(
-        self, /,
+        self, *,
         startDate: Annotated[str | None, "Start date for filtering estimated delivery (e.g., 'YYYY-MM-DD')."] = None,
         endDate: Annotated[str | None, "End date for filtering estimated delivery (e.g., 'YYYY-MM-DD')."] = None,
         limit: Annotated[int, Field(description="Maximum number of records to return (default 50).", default=50)] = 50,
@@ -232,7 +233,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_sales_order_by_id(
-        self, /,
+        self, *,
         order_id: Annotated[str, "The unique ID (string) of the Sales Order to fetch."],
     ) -> dict:
         return await self.client.get(f"/api/sales-orders/{order_id}")
@@ -244,7 +245,7 @@ class McpDataTools:
         annotations={"destructiveHint": True, "requiresConfirmation": True},
     )
     async def post_sales_order(
-        self, /,
+        self, *,
         salesmanId: Annotated[int, "The ID of the salesman who booked the order (required)."],
         dealerId: Annotated[str, "The ID of the dealer who placed the order (required)."],
         quantity: Annotated[float, "Order quantity (e.g., 10.5)."],
@@ -263,7 +264,7 @@ class McpDataTools:
         annotations={"destructiveHint": True, "requiresConfirmation": True},
     )
     async def post_dvr_report(
-        self, /,
+        self, *,
         userId: Annotated[int, "The unique ID of the user who submitted the report (required)."],
         reportDate: Annotated[str, "Date of the report (YYYY-MM-DD format) (required)."],
         dealerType: Annotated[str, "Type of dealer visited (required)."],
@@ -278,7 +279,6 @@ class McpDataTools:
         todayCollectionRupees: Annotated[float, "Collection amount in rupees today (required)."],
         feedbacks: Annotated[str, "Key feedback or issues from the visit (required)."],
         checkInTime: Annotated[str, "Visit check-in timestamp (ISO 8601 string or date string) (required)."],
-        
         dealerName: Annotated[str | None, "Optional name of the dealer."] = None,
         subDealerName: Annotated[str | None, "Optional name of the sub-dealer."] = None,
         contactPerson: Annotated[str | None, "Optional contact person name."] = None,
@@ -298,7 +298,7 @@ class McpDataTools:
         annotations={"destructiveHint": True, "requiresConfirmation": True},
     )
     async def post_tvr_report(
-        self, /,
+        self, *,
         userId: Annotated[int, "The unique ID of the user who submitted the report (required)."],
         reportDate: Annotated[str, "Date of the report (YYYY-MM-DD format) (required)."],
         visitType: Annotated[str, "Type of visit conducted (required)."],
@@ -308,7 +308,6 @@ class McpDataTools:
         dealerName: Annotated[str, "Name of the related dealer (required)."],
         conversionStatus: Annotated[str, "Status of conversion for the client/site (e.g., 'Converted', 'Follow-up') (required)."],
         conversionVolume: Annotated[float, "Estimated volume of conversion in metric tons (required)."],
-        
         dealerId: Annotated[str | None, "Optional ID of the related dealer."] = None,
         serviceType: Annotated[str | None, "Optional service type performed (e.g., 'Warranty', 'Paid Service')."] = None,
         competitorsProduct: Annotated[str | None, "Optional product from competitors found at the site."] = None,
