@@ -142,8 +142,7 @@ class McpDataTools:
         annotations={"readOnlyHint": True},
     )
     async def get_user_by_id(
-        self, 
-        user_id: Annotated[int, "The unique ID of the user to fetch."],
+    user_id: Annotated[int, "The unique ID of the user to fetch."],
     ) -> dict:
         """Maps to: GET /api/users/{id}"""
         return await self.client.get(f"/api/users/{user_id}")
