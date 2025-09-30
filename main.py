@@ -2,7 +2,7 @@ import os
 import httpx
 from dotenv import load_dotenv
 from fastmcp import FastMCP 
-from typing import Annotated, list, Dict, Any # Required for adding metadata to types
+from typing import Annotated, Dict, Any # Required for adding metadata to types
 from pydantic import Field # Required for defining parameter descriptions and constraints
 try:
     # The canonical import path for FastMCP
