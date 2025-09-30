@@ -305,7 +305,7 @@ async def post_tvr_report(
     influencerType: Annotated[list[str], "List of influencer types (e.g., ['Engineer', 'Owner'])."],
     checkInTime: Annotated[str, "Check-in timestamp."],
     
-    # Optional Fields:
+    # Optional Fields for TVR:
     emailId: Annotated[str | None, "Contact email address (if available)."] = None,
     siteVisitStage: Annotated[str | None, "Stage of the site visit (e.g., 'Initial', 'Closing')."] = None,
     conversionFromBrand: Annotated[str | None, "Brand converting from (if applicable)."] = None,
@@ -321,6 +321,18 @@ async def post_tvr_report(
     checkOutTime: Annotated[str | None, "Check-out timestamp."] = None,
     inTimeImageUrl: Annotated[str | None, "Check-in image URL."] = None,
     outTimeImageUrl: Annotated[str | None, "Check-out image URL."] = None,
+    
+    # --- FIX: Added fields to prevent LLM Pydantic error on tool call ---
+    # These fields are included in the tool signature, but will be filtered out before 
+    # the API call since they are not present in the backend Zod schema.
+    anyRemarks: Annotated[str | None, "Any additional remarks."] = None,
+    dealerName: Annotated[str | None, "Name of the associated dealer."] = None,
+    brandSelling: Annotated[list[str] | None, "List of brands sold by the dealer."] = None,
+    contactPerson: Annotated[str | None, "Contact person's name for dealer/sub-dealer."] = None,
+    overdueAmount: Annotated[float | None, "Overdue amount for the dealer."] = None,
+    subDealerName: Annotated[str | None, "Name of the associated sub-dealer."] = None,
+    contactPersonPhoneNo: Annotated[str | None, "Contact person's phone number."] = None,
+    solutionBySalesperson: Annotated[str | None, "Solution provided by the salesperson."] = None,
 ) -> dict:
     # Use the helper to collect non-None parameters
     data = tools_impl._collect_params(locals())
