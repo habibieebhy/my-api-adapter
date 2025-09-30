@@ -1,0 +1,13 @@
+services:
+  api-adapter: # this is the service name used to create nginx reverse proxy config file alias
+    #build: . # use this command to directly build the image using docker compose up , then comment out the image: username/repo_name:v_
+    image: goswamirohit/myapiadapter:v8a
+    container_name: my-api-adapter
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    # This tells Docker to load environment variables from the .env file.
+    env_file:
+      - .env
+    volumes:
+      - .:/app
