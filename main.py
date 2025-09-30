@@ -259,7 +259,7 @@ async def post_dvr_report(
     brandSelling: Annotated[list[str], "List of brands the dealer sells."],
     todayOrderMt: Annotated[float, "Order today (in MT)."],
     todayCollectionRupees: Annotated[float, "Collection today (in Rupees)."],
-    feedbacks: Annotated[str, "Feedback from the visit."], 
+    feedbacks: Annotated[str, "The mandatory, detailed feedback or summary of the visit."], 
     checkInTime: Annotated[str, "Check-in timestamp."],
     dealerName: Annotated[str | None, "Dealer's name."] = None,
     subDealerName: Annotated[str | None, "Sub-dealer's name."] = None,
@@ -267,7 +267,7 @@ async def post_dvr_report(
     contactPersonPhoneNo: Annotated[str | None, "Contact person's phone."] = None,
     overdueAmount: Annotated[float | None, "Overdue amount."] = None,
     solutionBySalesperson: Annotated[str | None, "Solution provided."] = None,
-    anyRemarks: Annotated[str | None, "Other remarks."] = None,
+    anyRemarks: Annotated[str | None, "Any additional or other optional remarks."] = None,
     checkOutTime: Annotated[str | None, "Check-out timestamp."] = None,
     inTimeImageUrl: Annotated[str | None, "Check-in image URL."] = None,
     outTimeImageUrl: Annotated[str | None, "Check-out image URL."] = None,
@@ -300,12 +300,12 @@ async def post_tvr_report(
     siteNameConcernedPerson: Annotated[str, "Name of the site or person."],
     phoneNo: Annotated[str, "Contact phone number."], 
     clientsRemarks: Annotated[str, "Client's remarks."],
-    salespersonRemarks: Annotated[str, "Remarks provided by the salesperson."], # Mandatory, from schema
-    siteVisitBrandInUse: Annotated[list[str], "List of brands used at the site (e.g., ['BrandX', 'BrandY'])."], # Mandatory Array, from schema
-    influencerType: Annotated[list[str], "List of influencer types (e.g., ['Engineer', 'Owner'])."], # Mandatory Array, from schema
-    checkInTime: Annotated[str, "Check-in timestamp."], # Check-in time is required in the DB
+    salespersonRemarks: Annotated[str, "Remarks provided by the salesperson."],
+    siteVisitBrandInUse: Annotated[list[str], "List of brands used at the site (e.g., ['BrandX', 'BrandY'])."],
+    influencerType: Annotated[list[str], "List of influencer types (e.g., ['Engineer', 'Owner'])."],
+    checkInTime: Annotated[str, "Check-in timestamp."],
     
-    # Corrected and Added Optional Fields to align with Zod schema:
+    # Optional Fields:
     emailId: Annotated[str | None, "Contact email address (if available)."] = None,
     siteVisitStage: Annotated[str | None, "Stage of the site visit (e.g., 'Initial', 'Closing')."] = None,
     conversionFromBrand: Annotated[str | None, "Brand converting from (if applicable)."] = None,
@@ -322,13 +322,10 @@ async def post_tvr_report(
     inTimeImageUrl: Annotated[str | None, "Check-in image URL."] = None,
     outTimeImageUrl: Annotated[str | None, "Check-out image URL."] = None,
 ) -> dict:
-    # --- FIX: Convert float arguments to strings for TVR POST request ---
-    data = locals()
+    # Use the helper to collect non-None parameters
+    data = tools_impl._collect_params(locals())
     
-    # CRITICAL FIX: Filter out None values and context arguments (like self/kwargs)
-    data = {k: v for k, v in data.items() if v is not None and k not in ['kwargs', 'self']}
-    
-    # CRITICAL FIX: Convert the numeric field to string.
+    # CRITICAL FIX: The backend schema expects this value as a string for storage.
     if 'conversionQuantityValue' in data and data['conversionQuantityValue'] is not None: 
         data['conversionQuantityValue'] = str(data['conversionQuantityValue'])
         
