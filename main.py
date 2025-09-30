@@ -77,11 +77,6 @@ class McpDataToolsImpl:
         self.client = client
 
     def _collect_params(self, local_vars: dict) -> dict:
-        # This method is used by the blueprint functions to collect arguments.
-        # It needs to filter out 'None' values ONLY for the non-POST (GET) operations,
-        # but for the POST operations, we handle the filtering and extra_params cleanup
-        # directly in the blueprint function where 'locals()' captures everything, including 'self'.
-        
         # When called from a blueprint function that uses locals(), we need to pop context arguments
         params = local_vars.copy()
         params.pop('self', None) # If locals() includes self (e.g., if called directly)
@@ -232,14 +227,11 @@ async def post_sales_order(
     pendingPayment: Annotated[float, "Pending payment amount."],
     estimatedDelivery: Annotated[str, "Estimated delivery date (YYYY-MM-DD)."],
     remarks: Annotated[str | None, "Optional remarks."] = None,
-    # FIX: Add **extra_params to tolerate LLM confusion
-    **extra_params: Dict[str, Any]
 ) -> dict:
-     # --- FIX: Type conversion and data collection moved here for consistency with other POST tools ---
-    data = tools_impl._collect_params(locals())
+    data = locals()
 
-    # CRITICAL FIX: Remove the catcher argument
-    data.pop('extra_params', None)
+    # Filter out None values and context arguments (like self/kwargs)
+    data = {k: v for k, v in data.items() if v is not None and k not in ['kwargs', 'self']}
 
     # CRITICAL FIX: Convert float arguments to strings to satisfy the backend API schema (numeric fields)
     if 'quantity' in data: data['quantity'] = str(data['quantity'])
@@ -279,14 +271,9 @@ async def post_dvr_report(
     checkOutTime: Annotated[str | None, "Check-out timestamp."] = None,
     inTimeImageUrl: Annotated[str | None, "Check-in image URL."] = None,
     outTimeImageUrl: Annotated[str | None, "Check-out image URL."] = None,
-    # CRITICAL FIX: Accept and discard any unexpected arguments passed by the LLM
-    **extra_params: Dict[str, Any]
 ) -> dict:
     # --- FIX: Convert float arguments to strings for DVR POST request ---
     data = locals()
-    
-    # CRITICAL FIX: Remove the catcher argument
-    data.pop('extra_params', None)
     
     # CRITICAL FIX: Filter out None values and context arguments (like self/kwargs)
     data = {k: v for k, v in data.items() if v is not None and k not in ['kwargs', 'self']}
@@ -334,14 +321,9 @@ async def post_tvr_report(
     checkOutTime: Annotated[str | None, "Check-out timestamp."] = None,
     inTimeImageUrl: Annotated[str | None, "Check-in image URL."] = None,
     outTimeImageUrl: Annotated[str | None, "Check-out image URL."] = None,
-    # CRITICAL FIX: Accept and discard any unexpected arguments passed by the LLM
-    **extra_params: Dict[str, Any]
 ) -> dict:
     # --- FIX: Convert float arguments to strings for TVR POST request ---
     data = locals()
-    
-    # CRITICAL FIX: Remove the catcher argument
-    data.pop('extra_params', None)
     
     # CRITICAL FIX: Filter out None values and context arguments (like self/kwargs)
     data = {k: v for k, v in data.items() if v is not None and k not in ['kwargs', 'self']}
