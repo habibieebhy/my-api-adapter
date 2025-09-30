@@ -337,9 +337,16 @@ async def post_tvr_report(
     # Use the helper to collect non-None parameters
     data = tools_impl._collect_params(locals())
     
-    # CRITICAL FIX: The backend schema expects this value as a string for storage.
-    if 'conversionQuantityValue' in data and data['conversionQuantityValue'] is not None: 
-        data['conversionQuantityValue'] = str(data['conversionQuantityValue'])
+    # Check the original value of the optional parameter 'conversionQuantityValue'.
+    cqv_value = locals().get('conversionQuantityValue')
+    
+    # 2. CRITICAL CLIENT-SIDE FIX: Force the key to be present if it was None.
+    if cqv_value is None:
+        data['conversionQuantityValue'] = None
+    
+    # 3. Handle the required conversion from float (Python) to string (Backend DB).
+    elif cqv_value is not None: 
+        data['conversionQuantityValue'] = str(cqv_value)
         
     return await tools_impl.client.post("/api/technical-visit-reports", data=data)
 
